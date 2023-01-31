@@ -1,51 +1,181 @@
 ---
 title: "Lab 04 - La Quinta is Spanish for next to Denny's, Pt. 1"
-author: "Insert your name here"
-date: "Insert date here"
+author: "Colin Li"
+date: "01/31/2023"
 output: github_document
 ---
 
 ### Load packages and data
 
+install.packages("devtools")
+devtools::install_github("rstudio-education/dsbox")
+
 ```{r load-packages, message = FALSE}
 library(tidyverse) 
 library(dsbox) 
+
+
 ```
 
 ```{r load-data, message = FALSE}
+
+load("C:/Users/Colin/Documents/GitHub/Colin_lab4/data/laquinta.rda")
+load("C:/Users/Colin/Documents/GitHub/Colin_lab4/data/dennys.rda")
+
 states <- read_csv("data/states.csv")
 ```
 
 ### Exercise 1
 
-Remove this text, and add your answer for Exercise 1 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+```{r}
+nrow(dennys)
+ncol(dennys)
+glimpse(dennys)
+
+```
+1643 rows mean there are 1643 subjects in the dataset
+6 columns mean there are 6 variables
+the variables are address, city, state, zip code, longitude, and latitude
+
+
 
 ### Exercise 2
 
-Remove this text, and add your answer for Exercise 2 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+```{r}
+glimpse(laquinta)
+
+```
+
+909 rows mean there are 909 subjects in the dataset
+6 columns mean there are 6 variables
+the variables are address, city, state, zip code, longitude, and latitude
 
 ### Exercise 3
+
+Yes, there are La Quinta's locations outside of the U.S.: Canada, Mexico, China, New Zealand, Turkey, UAE, Chile, Colombia
+The Denny's website does not allow me to check locations outside of the U.S., but professor Google told me there are Dennys in Chile, Canada, Mexico, Costa Rica, Honduras, El Salvador, the United Kingdom and New Zealand.
+
 
 ...
 
 ### Exercise 4
 
+We can find U.S. territory's longitude and filter data outside of the range and do the same for latitude. 
+
+
 ...
 
 ### Exercise 5
 
+```{r}
+dennys %>%
+  filter(!(state %in% states$abbreviation))
+
+```
+No dennys locations outside of US
+
 ...
 
 ### Exercise 6
+```{r}
+dennys <- dennys %>%
+  mutate(country = "United States")
+```
 
 ...
 
- 
-Add exercise headings as needed.
+### Exercise 7
 
+```{r}
+laquinta %>%
+  filter(!(state %in% states$abbreviation))
+```
+
+
+Canada ("ON", "BC"), Mexico ("AG", "QR", "CH", "NL", "VE", "PU", "SL"), Colombia ("ANT"), FM("Honduras")
+
+
+### Exercise 8
+
+```{r}
+laquinta <- laquinta %>%
+  mutate(country = case_when(
+    state %in% state.abb     ~ "United States",
+    state %in% c("ON", "BC") ~ "Canada",
+    state == "ANT"           ~ "Colombia",
+    state %in% c("AG", "QR", "CH", "NL", "VE", "PU", "SL") ~ "Mexico",                        state == "FM"           ~ "Honduras"
+
+  ))
+
+laquinta <- laquinta %>%
+  filter(country == "United States")
+
+
+```
+
+
+### Exercise 9
+
+```{r}
+library(dplyr)
+
+dennys %>%
+  dplyr::count(state) %>%
+  inner_join(states, by = c("state" = "abbreviation"))
+```
+
+
+### Exercise 10
+
+```{r usadnlq}
+library(ggsci)
+
+dennys <- dennys %>%
+  mutate(establishment = "Denny's")
+
+laquinta <- laquinta %>%
+  mutate(establishment = "La Quinta")
+
+dn_lq <- bind_rows(dennys, laquinta)
+
+ggplot(dn_lq, mapping = aes(x = longitude,
+                            y = latitude,
+                            color = establishment)) +
+  geom_point() + ggtitle("Denny's and La Quinta in the U.S.") + scale_color_npg() +theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "grey"))
+
+```
+
+
+### Exercise 11
+
+```{r ncdnlq}
+
+dn_lq_nc <- dn_lq %>%
+  filter(state == "NC")
+
+ggplot(dn_lq_nc, mapping = aes(x = longitude,
+                            y = latitude,
+                            color = establishment)) +
+  geom_point(alpha = 0.7) + ggtitle("Denny's and La Quinta in North Carolina") + scale_color_npg() +theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "grey"))
+```
+
+The joke sort of holds. The reason I say sort of is because there are many Dennys in the southeast do not have La Quinta hotels around.
+
+### Exercise 12
+
+```{r txdnlq}
+dn_lq_tx <- dn_lq %>%
+  filter(state == "TX")
+
+ggplot(dn_lq_tx, mapping = aes(x = longitude,
+                            y = latitude,
+                            color = establishment)) +
+  geom_point(alpha = 0.3) + ggtitle("Denny's and La Quinta in Texas") + scale_color_npg() +theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "grey"))
+```
+The joke holds better in Texas than in North Carolina. There is a lot overlap. When there's not, pretty much every Denny's has a La Quinta nearby. 
